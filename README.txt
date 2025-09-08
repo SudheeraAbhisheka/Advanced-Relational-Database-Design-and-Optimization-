@@ -4,3 +4,5 @@ Notes
 2. Inventory only tracks the global stock — each product has a single inventory record.
 
 3. The Product category table acts as a bridge.
+
+4. correct total, regardless the price updates 
