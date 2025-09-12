@@ -48,74 +48,102 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE `CustomerOrder1`()
+CREATE PROCEDURE `CreateCustomerOrder`(
+    IN p_CustomerID INT,
+    IN p_Name VARCHAR(255),
+    IN p_Email VARCHAR(255),
+    IN p_Phone VARCHAR(20),
+    IN p_Street VARCHAR(255),
+    IN p_City VARCHAR(100),
+    IN p_StateProvince VARCHAR(100),
+    IN p_PostalCode VARCHAR(20),
+    IN p_Country VARCHAR(100),
+    IN p_StoredTotal DECIMAL(14, 2),
+    IN p_OrderItemsJSON JSON
+)
 BEGIN
+    DECLARE newOrderID INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
         RESIGNAL;
     END;
-
     START TRANSACTION;
-
-    INSERT INTO `Order` (`OrderID`, `PlacedAt`, `CustomerID`, `Name`, `Email`, `Phone`, `Street`, `City`, `StateProvince`, `PostalCode`, `Country`, `StoredTotal`) VALUES
-    (1, '2025-09-08 10:15:00', 1, 'Sandun Perera', 'sandun.p@email.com', '0771234567', '45 Galle Road', 'Colombo', 'Western Province', '00300', 'Sri Lanka', 230000.00);
-
-    INSERT INTO `Order_item` (`OrderID`, `ProductID`, `QtyOrdered`, `UnitPriceAtOrder`) VALUES
-    (1, 1, 1, 185000.00),
-    (1, 3, 1, 45000.00);
-    
-    COMMIT;
-END$$
-DELIMITER ;
-
-
-DELIMITER $$
-CREATE PROCEDURE `CustomerOrder2`()
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-
-    START TRANSACTION;
-
-    INSERT INTO `Order` (`OrderID`, `PlacedAt`, `CustomerID`, `Name`, `Email`, `Phone`, `Street`, `City`, `StateProvince`, `PostalCode`, `Country`, `StoredTotal`) VALUES
-    (2, '2025-09-10 11:05:21', 2, 'Desman Silva', 'desman.silva@email.com', '0719876543', '88 Beach Road', 'Unawatuna', 'Southern Province', '80600', 'Sri Lanka', 12500.00);
-
-    INSERT INTO `Order_item` (`OrderID`, `ProductID`, `QtyOrdered`, `UnitPriceAtOrder`) VALUES
-    (2, 8, 1, 7500.00),
-    (2, 5, 1, 3200.00),
-    (2, 7, 1, 1800.00);
-    
-    COMMIT;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE PROCEDURE `CustomerOrder3`()
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-
-    START TRANSACTION;
-
-    INSERT INTO `Order` (`OrderID`, `PlacedAt`, `CustomerID`, `Name`, `Email`, `Phone`, `Street`, `City`, `StateProvince`, `PostalCode`, `Country`, `StoredTotal`) VALUES
-    (3, '2025-09-11 10:30:00', 3, 'Nimali Perera', 'nimali.p@email.com', '0771234567', '123 Kandy Road', 'Watareka', 'Western Province', '10500', 'Sri Lanka', 5500.00);
-    
-    INSERT INTO `Order_item` (`OrderID`, `ProductID`, `QtyOrdered`, `UnitPriceAtOrder`) VALUES
-    (3, 1, 2, 1500.00),
-    (3, 4, 1, 2500.00);
-
+    INSERT INTO `Order` (
+        `CustomerID`, `Name`, `Email`, `Phone`, 
+        `Street`, `City`, `StateProvince`, `PostalCode`, `Country`, `StoredTotal`
+    ) VALUES (
+        p_CustomerID, p_Name, p_Email, p_Phone, 
+        p_Street, p_City, p_StateProvince, p_PostalCode, p_Country, p_StoredTotal
+    );
+    SET newOrderID = LAST_INSERT_ID();
+    INSERT INTO `Order_item` (`OrderID`, `ProductID`, `QtyOrdered`, `UnitPriceAtOrder`)
+    SELECT
+        newOrderID,
+        jt.productID,
+        jt.qtyOrdered,
+        jt.unitPrice
+    FROM
+        JSON_TABLE(
+            p_OrderItemsJSON,
+            '$[*]' COLUMNS (
+                productID INT PATH '$.productID',
+                qtyOrdered INT PATH '$.quantity',
+                unitPrice DECIMAL(12, 2) PATH '$.unitPrice'
+            )
+        ) AS jt;
     COMMIT;
 END$$
 DELIMITER ;
 
 CALL ProductCatelog();
-CALL CustomerOrder1();
-CALL CustomerOrder2();
-CALL CustomerOrder3();
+CALL `CreateCustomerOrder`(
+    1,
+    'Sandun Perera',
+    'sandun.p@email.com',
+    '0771234567',
+    '45 Galle Road',
+    'Colombo',
+    'Western Province',
+    '00300',
+    'Sri Lanka',
+    230000.00,
+    '[
+        {"productID": 1, "quantity": 1, "unitPrice": 185000.00},
+        {"productID": 3, "quantity": 1, "unitPrice": 45000.00}
+    ]'
+);
+CALL `CreateCustomerOrder`(
+    2,
+    'Desman Silva',
+    'desman.silva@email.com',
+    '0719876543',
+    '88 Beach Road',
+    'Unawatuna',
+    'Southern Province',
+    '80600',
+    'Sri Lanka',
+    12500.00,
+    '[
+        {"productID": 8, "quantity": 1, "unitPrice": 7500.00},
+        {"productID": 5, "quantity": 1, "unitPrice": 3200.00},
+        {"productID": 7, "quantity": 1, "unitPrice": 1800.00}
+    ]'
+);
+CALL `CreateCustomerOrder`(
+    3,
+    'Nimali Perera',
+    'nimali.p@email.com',
+    '0771234567',
+    '123 Kandy Road',
+    'Watareka',
+    'Western Province',
+    '10500',
+    'Sri Lanka',
+    5500.00,
+    '[
+        {"productID": 1, "quantity": 2, "unitPrice": 1500.00},
+        {"productID": 4, "quantity": 1, "unitPrice": 2500.00}
+    ]'
+);
+
