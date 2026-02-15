@@ -1,0 +1,14 @@
+SELECT * FROM Customer WHERE Name = 'Sandun Perera';
+SELECT * FROM Customer ORDER BY Name;
+SELECT * FROM Product WHERE Price BETWEEN 2000.00 AND 10000.00;
+SELECT * FROM Product ORDER BY Price DESC;
+SELECT * FROM Product WHERE IsActive = 1 AND Price < 25.00;
+SELECT * FROM Product WHERE IsActive = 1;
+SELECT * FROM `Order` WHERE CustomerID = 1;
+SELECT c.Name, o.OrderID FROM Customer c JOIN `Order` o ON c.CustomerID = o.CustomerID WHERE c.Name = 'Desman Silva';
+SELECT * FROM `Order` WHERE PlacedAt >= '2025-09-01';
+SELECT * FROM `Order` ORDER BY PlacedAt DESC;
+SELECT OrderID FROM Order_item WHERE ProductID = 8;
+SELECT p.Name, oi.QtyOrdered FROM Order_item oi JOIN Product p ON oi.ProductID = p.ProductID WHERE oi.OrderID = 2;
+SELECT ProductID FROM Product_category_map WHERE CategoryID = 1;
+SELECT p.Name FROM Product p JOIN Product_category_map pcm ON p.ProductID = pcm.ProductID WHERE pcm.CategoryID = 2;
